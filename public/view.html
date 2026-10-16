@@ -366,8 +366,8 @@
 
   /* ------------- JSON 格式化：把本条内容的原始内容 API 地址带过去 ------------- */
 
-  // 外部工具通过 ?url= 参数抓取 /data?token=xxx 拿到纯文本原文
-  const apiUrl = `${location.origin}/data?token=${encodeURIComponent(data.token)}`;
+  // 外部工具通过 ?url= 参数抓取 /<token> 拿到纯文本原文
+  const apiUrl = `${location.origin}/${encodeURIComponent(data.token)}`;
   const jsonTool = document.getElementById('jsonTool');
   jsonTool.href = `https://json.litetools.top?url=${encodeURIComponent(apiUrl)}`;
   jsonTool.title = `在新标签页打开 JSON 格式化工具（读取 ${apiUrl}）`;

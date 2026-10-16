@@ -213,13 +213,15 @@ async function handleShare(req, res) {
 }
 
 /**
- * 原始内容 API：GET /data?token=xxx
+ * 原始内容 API：GET /<token>
  *
- * 供外部工具（例如 JSON 格式化站点）通过 ?url= 参数抓取原始内容。
- * 成功时返回纯文本原文；token 无效或已过期时返回 {"code":-1,"msg":"内容已经过期"}。
+ * 与展示页 /s/<token> 一一对应，但返回纯文本原文而非 HTML 页面，
+ * 供外部工具（JSON 格式化等）通过 ?url= 参数直接抓取。
+ * 成功返回原文；token 无效或已过期返回 {"code":-1,"msg":"内容已经过期"}。
  * 响应带 Access-Control-Allow-Origin: *，任意站点都能在浏览器端直接读取。
  */
-function handleData(req, res, url) {
+function handleRaw(req, res, token) {
+  // 跨域预检（GET 属简单请求通常不触发，这里兜底）
   if (req.method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
@@ -229,11 +231,6 @@ function handleData(req, res, url) {
     return res.end();
   }
 
-  if (req.method !== 'GET') {
-    return sendJson(res, 405, { error: '仅支持 GET 请求' });
-  }
-
-  const token = url.searchParams.get('token') || '';
   const share = readShare(token);
 
   if (!share) {
@@ -288,13 +285,16 @@ const server = http.createServer(async (req, res) => {
     return sendHtml(res, 200, readTemplate('view.html', { PAYLOAD: payload, TTL_MINUTES }));
   }
 
-  // 原始内容 API，供外部工具（JSON 格式化等）抓取
-  if (pathname === '/data') {
-    return handleData(req, res, url);
-  }
-
   if (req.method === 'GET' && serveIcon(res, pathname)) {
     return;
+  }
+
+  // 原始内容 API：/<token>
+  // 放在所有固定路径之后，靠 token 格式校验兜底，不会与 /、/api/share、
+  // /s/... 以及图标路径冲突（token 正则不含斜杠，多段路径天然不匹配）。
+  const rawToken = pathname.slice(1);
+  if ((req.method === 'GET' || req.method === 'OPTIONS') && TOKEN_RE.test(rawToken)) {
+    return handleRaw(req, res, rawToken);
   }
 
   return sendJson(res, 404, { error: '页面不存在' });

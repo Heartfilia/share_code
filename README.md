@@ -70,7 +70,8 @@ node -v
 **2. 上传项目**
 
 ```bash
-rsync -av --exclude '.workbuddy-ai' --exclude 'shares' ./ root@你的服务器:/opt/share/
+# 排除规则直接复用 .gitignore：分享数据、系统文件、编辑器配置等都不会上传
+rsync -avc --exclude-from=.gitignore ./ root@你的服务器:/opt/share/
 ```
 
 **3. 运行部署脚本**
@@ -109,8 +110,8 @@ sudo ufw enable
 ### 更新代码
 
 ```bash
-# 本地
-rsync -avc --exclude '.workbuddy-ai' --exclude 'shares' ./ root@你的服务器:/opt/share/
+# 本地：排除规则复用 .gitignore，线上分享数据不会被覆盖
+rsync -avc --exclude-from=.gitignore ./ root@你的服务器:/opt/share/
 
 # 服务器：改了 server.js 才需要重启；只改 HTML 的话刷新即可
 sudo systemctl restart share

@@ -149,6 +149,47 @@ systemctl restart share     # 重启服务
 
 > ⚠️ 反向代理时**务必转发原始 Host**（`nginx.conf` 里已配好），否则 Node 看到的是 `127.0.0.1:3000`，生成的链接会变成内网地址，发给别人打不开。
 
+## API
+
+### 创建分享
+
+```http
+POST /api/share
+Content-Type: application/json
+
+{ "content": "要分享的内容" }
+```
+
+响应：
+
+```json
+{
+  "token": "aB3xK9mPq2Lw7YtR",
+  "url": "https://share.example.com/s/aB3xK9mPq2Lw7YtR",
+  "expiresAt": 1792118378394,
+  "ttlMinutes": 60
+}
+```
+
+### 获取原始内容
+
+```http
+GET /data?token=aB3xK9mPq2Lw7YtR
+```
+
+| 情况 | 响应 |
+|---|---|
+| 内容有效 | **纯文本原文**，`Content-Type: text/plain; charset=utf-8` |
+| 已过期 / token 无效 | `{"code":-1,"msg":"内容已经过期"}` |
+
+响应带 `Access-Control-Allow-Origin: *`，任意站点都可以在浏览器端直接读取，方便接入第三方工具。内容若是 JSON，调用方拿到的是未经包装的原始 JSON，可直接 `JSON.parse`。
+
+内容页右上角的「JSON 格式化」入口就是通过这个接口把原文传给格式化工具的：
+
+```
+https://json.litetools.top?url=https://share.example.com/data?token=aB3xK9mPq2Lw7YtR
+```
+
 ## 目录结构
 
 ```

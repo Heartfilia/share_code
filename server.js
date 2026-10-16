@@ -212,10 +212,52 @@ async function handleShare(req, res) {
   });
 }
 
+/**
+ * 原始内容 API：GET /data?token=xxx
+ *
+ * 供外部工具（例如 JSON 格式化站点）通过 ?url= 参数抓取原始内容。
+ * 成功时返回纯文本原文；token 无效或已过期时返回 {"code":-1,"msg":"内容已经过期"}。
+ * 响应带 Access-Control-Allow-Origin: *，任意站点都能在浏览器端直接读取。
+ */
+function handleData(req, res, url) {
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Max-Age': '86400',
+    });
+    return res.end();
+  }
+
+  if (req.method !== 'GET') {
+    return sendJson(res, 405, { error: '仅支持 GET 请求' });
+  }
+
+  const token = url.searchParams.get('token') || '';
+  const share = readShare(token);
+
+  if (!share) {
+    res.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'no-store',
+    });
+    return res.end(JSON.stringify({ code: -1, msg: '内容已经过期' }));
+  }
+
+  res.writeHead(200, {
+    'Content-Type': 'text/plain; charset=utf-8',
+    'Access-Control-Allow-Origin': '*',
+    'Cache-Control': 'no-store',
+  });
+  res.end(share.content);
+}
+
 const server = http.createServer(async (req, res) => {
-  let pathname;
+  let url, pathname;
   try {
-    pathname = decodeURIComponent(new URL(req.url, `http://${req.headers.host || 'localhost'}`).pathname);
+    url = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    pathname = decodeURIComponent(url.pathname);
   } catch {
     return sendJson(res, 400, { error: '无效的请求地址' });
   }
@@ -237,12 +279,18 @@ const server = http.createServer(async (req, res) => {
     }
 
     const payload = JSON.stringify({
+      token,
       content: share.content,
       expiresAt: share.expiresAt,
       createdAt: share.createdAt,
     }).replace(/</g, '\\u003c');
 
     return sendHtml(res, 200, readTemplate('view.html', { PAYLOAD: payload, TTL_MINUTES }));
+  }
+
+  // 原始内容 API，供外部工具（JSON 格式化等）抓取
+  if (pathname === '/data') {
+    return handleData(req, res, url);
   }
 
   if (req.method === 'GET' && serveIcon(res, pathname)) {

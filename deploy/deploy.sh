@@ -88,13 +88,22 @@ fi
 log "创建目录 $APP_DIR"
 mkdir -p "$APP_DIR/public" "$APP_DIR/shares"
 
-# 只覆盖程序文件，保留 shares/ 里尚未过期的分享
-log "复制应用文件"
-install -o "$APP_USER" -g "$APP_USER" -m 644 "$SRC_DIR/server.js"  "$APP_DIR/server.js"
-install -o "$APP_USER" -g "$APP_USER" -m 644 "$SRC_DIR/cleanup.js" "$APP_DIR/cleanup.js"
-for f in "$SRC_DIR"/public/*.html; do
-  install -o "$APP_USER" -g "$APP_USER" -m 644 "$f" "$APP_DIR/public/$(basename "$f")"
-done
+if [ "$SRC_DIR" = "$APP_DIR" ]; then
+  # 已经就地运行（例如直接用 rsync 同步到了 $APP_DIR），无需再复制
+  log "源目录与目标目录相同，跳过文件复制（就地部署）"
+  chown "$APP_USER:$APP_USER" "$APP_DIR/server.js" "$APP_DIR/cleanup.js" 2>/dev/null || true
+  chown -R "$APP_USER:$APP_USER" "$APP_DIR/public" 2>/dev/null || true
+else
+  # 只覆盖程序文件，保留 shares/ 里尚未过期的分享
+  log "复制应用文件"
+  install -o "$APP_USER" -g "$APP_USER" -m 644 "$SRC_DIR/server.js"  "$APP_DIR/server.js"
+  install -o "$APP_USER" -g "$APP_USER" -m 644 "$SRC_DIR/cleanup.js" "$APP_DIR/cleanup.js"
+  # public/ 下的全部文件都要复制（含 favicon.svg / favicon.ico 等静态资源）
+  for f in "$SRC_DIR"/public/*; do
+    [ -f "$f" ] || continue
+    install -o "$APP_USER" -g "$APP_USER" -m 644 "$f" "$APP_DIR/public/$(basename "$f")"
+  done
+fi
 
 chown -R "$APP_USER:$APP_USER" "$APP_DIR/shares"
 chmod 750 "$APP_DIR/shares"
@@ -104,6 +113,9 @@ find "$APP_DIR" -maxdepth 2 -not -path "$APP_DIR/shares/*" -printf '    %M %u:%g
 
 for f in server.js cleanup.js public/index.html public/view.html public/expired.html; do
   [ -f "$APP_DIR/$f" ] || die "缺少文件：$APP_DIR/$f"
+done
+for f in public/favicon.svg public/favicon.ico; do
+  [ -f "$APP_DIR/$f" ] || warn "缺少站点图标：$APP_DIR/$f（页面仍可用，只是标签页没有图标）"
 done
 
 # ---------------------------- 安装 systemd ----------------------------

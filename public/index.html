@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>速享 · 粘贴即分享</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --ink: #0f1729;
+    --ink-soft: #46536b;
+    --muted: #8494ab;
+    --line: #e6ecf5;
+    --line-soft: #eef3fa;
+    --surface: #ffffff;
+    --sunken: #f7f9fd;
+    --brand: #5b53f0;
+    --brand-2: #8b5cf6;
+    --brand-tint: #eef0ff;
+    --ok: #059669;
+    --shadow-card:
+      0 1px 2px rgba(15, 23, 42, .04),
+      0 10px 28px -12px rgba(15, 23, 42, .10),
+      0 40px 70px -36px rgba(79, 70, 229, .18);
+  }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 52px 20px 80px;
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro SC", "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #f6f8fd;
+    background-image:
+      radial-gradient(1200px 620px at 6% -10%, rgba(99, 102, 241, .15), transparent 58%),
+      radial-gradient(1000px 540px at 96% 0%, rgba(168, 85, 247, .11), transparent 58%),
+      radial-gradient(1000px 560px at 50% 112%, rgba(56, 189, 248, .10), transparent 58%);
+    background-attachment: fixed;
+  }
+
+  /* 极淡的网格，向下渐隐，给背景一点结构感 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(15, 23, 42, .022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 23, 42, .022) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(ellipse 92% 58% at 50% 20%, #000 0%, transparent 78%);
+    mask-image: radial-gradient(ellipse 92% 58% at 50% 20%, #000 0%, transparent 78%);
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; }
+
+  /* ------------------------------ 顶部 ------------------------------ */
+
+  header { text-align: center; margin-bottom: 34px; }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14.5px;
+    font-weight: 650;
+    letter-spacing: .2px;
+    color: var(--ink);
+    padding: 6px 15px 6px 6px;
+    background: rgba(255, 255, 255, .78);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 8px 22px -14px rgba(15, 23, 42, .3);
+  }
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 9px;
+    color: #fff;
+    background: linear-gradient(140deg, var(--brand), var(--brand-2));
+    box-shadow: 0 4px 10px -4px rgba(99, 102, 241, .8);
+  }
+
+  h1 {
+    margin: 22px 0 12px;
+    font-size: clamp(27px, 4.2vw, 37px);
+    font-weight: 700;
+    letter-spacing: -.6px;
+    line-height: 1.28;
+    background: linear-gradient(170deg, #16203a 20%, #3b4472 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .lede {
+    margin: 0 auto;
+    max-width: 40em;
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--muted);
+  }
+  .lede strong { color: var(--ink-soft); font-weight: 650; }
+
+  /* ----------------------------- 输入区 ----------------------------- */
+
+  .composer {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 26px;
+    padding: 10px;
+    box-shadow: var(--shadow-card);
+    transition: border-color .22s, box-shadow .22s;
+  }
+  .composer:focus-within {
+    border-color: #cfd4fb;
+    box-shadow:
+      0 0 0 4px rgba(99, 102, 241, .09),
+      0 1px 2px rgba(15, 23, 42, .04),
+      0 16px 40px -16px rgba(79, 70, 229, .22),
+      0 46px 80px -40px rgba(79, 70, 229, .22);
+  }
+
+  textarea {
+    display: block;
+    width: 100%;
+    min-height: 320px;
+    resize: vertical;
+    padding: 18px 18px 8px;
+    font: inherit;
+    font-size: 15.5px;
+    line-height: 1.78;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    border-radius: 18px;
+    outline: none;
+  }
+  textarea::placeholder { color: #a6b3c7; }
+
+  .composer-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 12px 8px 6px 20px;
+    border-top: 1px solid var(--line-soft);
+    margin-top: 2px;
+  }
+
+  .count {
+    font-size: 13px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .count b { color: var(--ink-soft); font-weight: 650; }
+
+  button {
+    font-family: inherit;
+    border: 0;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 26px;
+    font-size: 15px;
+    font-weight: 650;
+    letter-spacing: .2px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, .24) inset,
+      0 10px 22px -9px rgba(99, 102, 241, .68);
+    transition: transform .18s cubic-bezier(.2, .8, .3, 1), box-shadow .22s, opacity .2s;
+  }
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 55% 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, .22), transparent);
+    pointer-events: none;
+  }
+  .btn-primary:hover:not(:disabled) {
+    transform: translateY(-1.5px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, .3) inset,
+      0 16px 32px -10px rgba(99, 102, 241, .78);
+  }
+  .btn-primary:active:not(:disabled) { transform: translateY(0) scale(.985); }
+  .btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+  .btn-primary svg { position: relative; z-index: 1; }
+  .btn-primary span { position: relative; z-index: 1; }
+
+  .btn-ghost {
+    padding: 13px 20px;
+    font-size: 14.5px;
+    font-weight: 620;
+    color: var(--ink-soft);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 13px;
+    transition: border-color .18s, background .18s, color .18s, transform .18s;
+  }
+  .btn-ghost:hover { border-color: #c8d1e8; background: #f8faff; }
+  .btn-ghost:active { transform: scale(.985); }
+  .btn-ghost.done {
+    color: var(--ok);
+    border-color: #a7e8cf;
+    background: #f0fdf8;
+  }
+
+  /* ----------------------------- 结果区 ----------------------------- */
+
+  .result {
+    margin-top: 16px;
+    padding: 22px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, .04),
+      0 14px 34px -18px rgba(15, 23, 42, .16);
+    animation: slide-up .34s cubic-bezier(.2, .8, .3, 1);
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .result-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 15px;
+    font-size: 14.5px;
+    font-weight: 650;
+    color: var(--ink);
+  }
+  .tick {
+    display: grid;
+    place-items: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    color: #fff;
+    background: linear-gradient(140deg, #10b981, #059669);
+    box-shadow: 0 4px 10px -4px rgba(5, 150, 105, .8);
+  }
+
+  .link-row { display: flex; gap: 10px; }
+  .link-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 14px 16px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13.5px;
+    color: var(--brand);
+    background: var(--brand-tint);
+    border: 1px solid #dfe3ff;
+    border-radius: 14px;
+    outline: none;
+    transition: border-color .18s, box-shadow .18s;
+  }
+  .link-row input:focus {
+    border-color: #b9c0fb;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, .1);
+  }
+
+  .result-note {
+    margin: 14px 0 0;
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--muted);
+  }
+  .result-note b { color: #c2740a; font-weight: 650; }
+  .result-note a {
+    color: var(--brand);
+    font-weight: 620;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(91, 83, 240, .28);
+    padding-bottom: 1px;
+    transition: border-color .18s;
+  }
+  .result-note a:hover { border-color: var(--brand); }
+
+  /* ------------------------------ Toast ------------------------------ */
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 42px;
+    z-index: 50;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 550;
+    color: #fff;
+    background: rgba(15, 23, 41, .93);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-radius: 14px;
+    box-shadow: 0 18px 40px -14px rgba(15, 23, 41, .6);
+    opacity: 0;
+    transform: translate(-50%, 16px) scale(.96);
+    pointer-events: none;
+    transition: opacity .26s, transform .26s cubic-bezier(.2, .8, .3, 1);
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+
+  /* ---------------------------- 响应式 ---------------------------- */
+
+  @media (max-width: 640px) {
+    body { padding: 30px 14px 52px; }
+    h1 { letter-spacing: -.4px; }
+    .composer { border-radius: 22px; padding: 8px; }
+    textarea { min-height: 240px; padding: 14px 14px 6px; }
+    .composer-bar { padding: 12px 6px 6px 14px; }
+    .btn-primary { padding: 12px 20px; font-size: 14.5px; }
+    .result { padding: 18px; }
+    .link-row { flex-direction: column; }
+    .btn-ghost { width: 100%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <span class="brand-mark">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
+      </span>
+      速享
+    </div>
+    <h1>粘贴内容，生成一条会消失的链接</h1>
+    <p class="lede">丢进下面的框，点一下就完成分享。链接 <strong>{{TTL_MINUTES}} 分钟</strong>后自动失效，内容同时销毁。</p>
+  </header>
+
+  <main>
+    <section class="composer">
+      <textarea id="content" placeholder="在这里粘贴任意内容：一段文字、一份代码、一段配置、一个临时口令……&#10;&#10;换行与缩进都会原样保留，访问者看到的就是你贴进来的样子。"></textarea>
+      <div class="composer-bar">
+        <span class="count"><b id="count">0</b> 字</span>
+        <button id="share" class="btn-primary">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path>
+            <polyline points="16 6 12 2 8 6"></polyline>
+            <line x1="12" y1="2" x2="12" y2="15"></line>
+          </svg>
+          <span id="shareLabel">生成分享链接</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="result" id="result" hidden>
+      <div class="result-head">
+        <span class="tick">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        </span>
+        分享链接已生成
+      </div>
+      <div class="link-row">
+        <input id="link" readonly>
+        <button id="copy" class="btn-ghost">复制链接</button>
+      </div>
+      <p class="result-note">
+        链接将于 <b id="expireText">--:--:--</b> 失效 —— 计时从内容创建的那一刻开始算，共 <span id="ttlText">{{TTL_MINUTES}}</span> 分钟，到点内容自动从服务器删除。<br>
+        <a id="openLink" href="#" target="_blank" rel="noopener">在新标签页打开看看 →</a>
+      </p>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const ta = document.getElementById('content');
+  const countEl = document.getElementById('count');
+  const shareBtn = document.getElementById('share');
+  const shareLabel = document.getElementById('shareLabel');
+  const result = document.getElementById('result');
+  const linkEl = document.getElementById('link');
+  const copyBtn = document.getElementById('copy');
+  const openLink = document.getElementById('openLink');
+  const toastEl = document.getElementById('toast');
+  const TTL_MINUTES = Number('{{TTL_MINUTES}}') || 60;
+
+  let toastTimer;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+  }
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function clockTime(ts) {
+    const d = new Date(ts);
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
+  }
+
+  function updateCount() {
+    countEl.textContent = ta.value.length.toLocaleString('zh-CN');
+  }
+  ta.addEventListener('input', updateCount);
+  updateCount();
+
+  async function copyLink() {
+    const text = linkEl.value;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      linkEl.select();
+      document.execCommand('copy');
+    }
+  }
+
+  shareBtn.addEventListener('click', async () => {
+    const content = ta.value;
+    if (!content.trim()) {
+      toast('先粘贴一点内容吧');
+      ta.focus();
+      return;
+    }
+
+    shareBtn.disabled = true;
+    shareLabel.textContent = '生成中…';
+
+    try {
+      const res = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '分享失败');
+
+      linkEl.value = data.url;
+      openLink.href = data.url;
+      document.getElementById('expireText').textContent = clockTime(data.expiresAt);
+      document.getElementById('ttlText').textContent = data.ttlMinutes || TTL_MINUTES;
+
+      // 重新触发入场动画
+      result.hidden = false;
+      result.style.animation = 'none';
+      void result.offsetWidth;
+      result.style.animation = '';
+
+      toast('已生成分享链接');
+      linkEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (err) {
+      toast(err.message || '分享失败，请重试');
+    } finally {
+      shareBtn.disabled = false;
+      shareLabel.textContent = '生成分享链接';
+    }
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    await copyLink();
+    copyBtn.classList.add('done');
+    copyBtn.textContent = '已复制';
+    setTimeout(() => {
+      copyBtn.classList.remove('done');
+      copyBtn.textContent = '复制链接';
+    }, 1800);
+    toast('链接已复制到剪贴板');
+  });
+
+  linkEl.addEventListener('click', () => linkEl.select());
+
+  // Cmd / Ctrl + Enter 快捷分享
+  ta.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      shareBtn.click();
+    }
+  });
+</script>
+</body>
+</html>

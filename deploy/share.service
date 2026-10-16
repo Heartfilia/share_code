@@ -1,0 +1,52 @@
+[Unit]
+Description=速享 · 粘贴即分享 (Share)
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=share
+Group=share
+WorkingDirectory=/opt/share
+
+# ---------------------------- 环境变量 ----------------------------
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOST=127.0.0.1
+Environment=SHARE_TTL_MINUTES=60
+
+# 部署到域名后，取消下面这行的注释并改成你的域名。
+# 设了它，生成的分享链接就固定用这个前缀，不受代理头配置影响。
+# Environment=PUBLIC_BASE_URL=https://share.example.com
+
+# ------------------------------ 启动 ------------------------------
+# 若 node 不在 /usr/bin/node，用 `which node` 查到实际路径后修改
+ExecStart=/usr/bin/node /opt/share/server.js
+
+Restart=always
+RestartSec=3
+
+# ------------------------------ 日志 ------------------------------
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=share
+
+# ---------------------------- 安全加固 ----------------------------
+# 这一组选项会限制服务可访问的文件系统范围，属于纵深防御。
+# 如果服务启动失败（用 systemctl status share 或 journalctl -u share 看报错），
+# 可先整体注释掉下面这一段排查，确认能正常跑起来再逐条恢复。
+NoNewPrivileges=true
+PrivateTmp=true
+# 整个文件系统只读，仅 /opt/share/shares 可写。
+# 注意：若改了 WorkingDirectory，这里的路径要同步修改。
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/share/shares
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

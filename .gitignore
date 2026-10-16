@@ -1,0 +1,85 @@
+# ══════════════════════════════ 系统文件 ══════════════════════════════
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.fseventsd
+.VolumeIcon.icns
+.AppleDouble
+.LSOverride
+Icon?
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ══════════════════════════════ 编辑器 / IDE ══════════════════════════════
+
+.vscode/
+.idea/
+*.iml
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+.history/
+*.bak
+
+# ══════════════════════════════ Node.js ══════════════════════════════
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.npm/
+.yarn/
+.pnpm-store/
+coverage/
+.nyc_output/
+
+# ══════════════════════════════ 运行数据（★ 重要）══════════════════════════════
+
+# 分享内容的落盘目录：里面是用户粘贴的原文，属于隐私数据，绝不入库。
+# 服务启动时会自动创建该目录，不需要保留占位文件。
+shares/
+
+# ══════════════════════════════ 环境变量与密钥 ══════════════════════════════
+
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+secrets/
+
+# ══════════════════════════════ 日志与临时文件 ══════════════════════════════
+
+*.log
+logs/
+*.tmp
+*.temp
+tmp/
+.cache/
+
+# ══════════════════════════════ AI 工具本地数据 ══════════════════════════════
+
+# 如需把项目记忆一起纳入版本管理，删掉下面这行即可
+.workbuddy-ai/

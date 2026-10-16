@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>链接已失效 · 速享</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --ink: #0f1729;
+    --ink-soft: #46536b;
+    --muted: #8494ab;
+    --line: #e6ecf5;
+    --brand: #5b53f0;
+    --brand-2: #8b5cf6;
+  }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 36px 20px;
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro SC", "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #f6f8fd;
+    background-image:
+      radial-gradient(900px 480px at 50% -14%, rgba(251, 191, 36, .14), transparent 62%),
+      radial-gradient(800px 460px at 88% 96%, rgba(99, 102, 241, .10), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(15, 23, 42, .022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 23, 42, .022) 1px, transparent 1px);
+    background-size: 46px 46px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 0%, transparent 76%);
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 0%, transparent 76%);
+  }
+
+  .box {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 430px;
+    padding: 46px 34px 38px;
+    text-align: center;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 26px;
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, .04),
+      0 14px 36px -18px rgba(15, 23, 42, .14),
+      0 46px 80px -48px rgba(79, 70, 229, .2);
+    animation: rise .4s cubic-bezier(.2, .8, .3, 1);
+  }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: none; }
+  }
+
+  .icon {
+    display: grid;
+    place-items: center;
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 24px;
+    border-radius: 24px;
+    color: #d97706;
+    background: linear-gradient(140deg, #fff5e8, #ffe9d3);
+    box-shadow:
+      0 12px 28px -16px rgba(217, 119, 6, .7),
+      0 0 0 1px rgba(217, 119, 6, .09) inset;
+  }
+
+  h1 {
+    margin: 0 0 12px;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -.3px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14.5px;
+    line-height: 1.85;
+    color: var(--muted);
+  }
+  p b { color: #c2740a; font-weight: 650; }
+
+  .divider {
+    height: 1px;
+    margin: 26px 0 20px;
+    background: linear-gradient(90deg, transparent, var(--line) 22%, var(--line) 78%, transparent);
+  }
+
+  .hint { font-size: 13px; color: #a2aec2; line-height: 1.75; }
+
+  a.home {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
+    padding: 13px 26px;
+    font-size: 14.5px;
+    font-weight: 650;
+    color: #fff;
+    text-decoration: none;
+    background: linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
+    border-radius: 15px;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, .24) inset,
+      0 10px 22px -9px rgba(99, 102, 241, .68);
+    transition: transform .18s cubic-bezier(.2, .8, .3, 1), box-shadow .22s;
+  }
+  a.home:hover {
+    transform: translateY(-1.5px);
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, .3) inset,
+      0 16px 32px -10px rgba(99, 102, 241, .78);
+  }
+  a.home:active { transform: translateY(0) scale(.985); }
+
+  @media (max-width: 640px) {
+    .box { padding: 38px 24px 32px; border-radius: 22px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="icon">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="9"></circle>
+        <polyline points="12 7 12 12.5 16 14.5"></polyline>
+      </svg>
+    </div>
+
+    <h1>文件已失效</h1>
+    <p>这条分享不存在或已过期，内容已经从服务器上删除。<br>分享有效期只有 <b>{{TTL_MINUTES}} 分钟</b>。</p>
+
+    <div class="divider"></div>
+    <p class="hint">如果你需要这份内容，请联系分享者重新生成一条链接。</p>
+
+    <a class="home" href="/">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14"></path><path d="M5 12h14"></path>
+      </svg>
+      去创建一条新分享
+    </a>
+  </div>
+</body>
+</html>

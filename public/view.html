@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分享内容 · 速享</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --ink: #0f1729;
+    --ink-soft: #46536b;
+    --muted: #8494ab;
+    --line: #e6ecf5;
+    --surface: #ffffff;
+    --brand: #5b53f0;
+    --brand-2: #8b5cf6;
+    --brand-tint: #eef0ff;
+    --ok: #059669;
+  }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    padding: 44px 20px 80px;
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro SC", "PingFang SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #f6f8fd;
+    background-image:
+      radial-gradient(1100px 580px at 8% -12%, rgba(99, 102, 241, .13), transparent 58%),
+      radial-gradient(900px 500px at 94% 4%, rgba(56, 189, 248, .10), transparent 58%);
+    background-attachment: fixed;
+  }
+
+  .wrap { max-width: 880px; margin: 0 auto; }
+
+  /* ------------------------------ 顶栏 ------------------------------ */
+
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 14px 7px 7px;
+    font-size: 13.5px;
+    font-weight: 650;
+    color: var(--ink);
+    text-decoration: none;
+    cursor: pointer;
+    background: rgba(255, 255, 255, .8);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 999px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 8px 22px -14px rgba(15, 23, 42, .3);
+    transition: background .18s, border-color .18s, box-shadow .18s, transform .15s;
+  }
+  .badge:hover {
+    background: #fff;
+    border-color: #dfe3ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(15, 23, 42, .06), 0 14px 28px -14px rgba(91, 83, 240, .5);
+  }
+  .badge:active { transform: translateY(0) scale(.985); }
+  .badge-arrow {
+    color: var(--brand);
+    opacity: .5;
+    transition: opacity .18s, transform .18s;
+  }
+  .badge:hover .badge-arrow { opacity: 1; transform: translateX(2px); }
+  .badge-mark {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 8px;
+    color: #fff;
+    background: linear-gradient(140deg, var(--brand), var(--brand-2));
+    box-shadow: 0 4px 10px -4px rgba(99, 102, 241, .8);
+  }
+
+  /* 顶栏右侧入口：JSON 格式化工具 */
+  .tool-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 17px;
+    font-size: 13.5px;
+    font-weight: 650;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--brand);
+    background: var(--brand-tint);
+    border: 1px solid #dfe3ff;
+    border-radius: 999px;
+    text-decoration: none;
+    box-shadow: 0 8px 20px -14px rgba(91, 83, 240, .6);
+    transition: background .18s, border-color .18s, transform .15s, box-shadow .18s;
+  }
+  .tool-link:hover {
+    background: #e7eaff;
+    border-color: #c9cffd;
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px -14px rgba(91, 83, 240, .7);
+  }
+  .tool-link:active { transform: translateY(0) scale(.97); }
+  .tool-link svg { flex: none; }
+
+  /* ----------------------------- 进度条 ----------------------------- */
+
+  .progress-track {
+    height: 5px;
+    margin-bottom: 18px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, .07);
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+    transition: width 1s linear, background .5s;
+  }
+  .progress-fill.warn { background: linear-gradient(90deg, #f59e0b, #f97316); }
+  .progress-fill.danger { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+  /* ------------------------------ 卡片 ------------------------------ */
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, .04),
+      0 12px 32px -16px rgba(15, 23, 42, .12),
+      0 44px 76px -44px rgba(79, 70, 229, .2);
+  }
+
+  .card-head {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 15px 22px 16px;
+    background: linear-gradient(180deg, #fbfcff, #f8fafe);
+    border-bottom: 1px solid var(--line);
+  }
+  .head-main {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 650;
+    color: var(--ink-soft);
+  }
+  .label::before {
+    content: '';
+    width: 3px;
+    height: 13px;
+    border-radius: 2px;
+    background: linear-gradient(180deg, var(--brand), var(--brand-2));
+  }
+  .head-time {
+    font-size: 12.5px;
+    color: var(--muted);
+    padding-left: 10px;
+  }
+  .head-time b {
+    color: var(--ink-soft);
+    font-weight: 620;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ---------------------------- 操作按钮 ---------------------------- */
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+
+  .btn-copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 620;
+    line-height: 1;
+    white-space: nowrap;
+    color: var(--ink-soft);
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color .18s, background .18s, color .18s, transform .15s;
+  }
+  .btn-copy svg { flex: none; }
+  .btn-copy:hover { border-color: #c8d1e8; background: #f8faff; }
+  .btn-copy:active { transform: scale(.97); }
+  .btn-copy.done {
+    color: var(--ok);
+    border-color: #a7e8cf;
+    background: #f0fdf8;
+  }
+
+  pre {
+    margin: 0;
+    padding: 26px 24px 28px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "PingFang SC", monospace;
+    font-size: 14px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    color: var(--ink);
+    tab-size: 4;
+  }
+
+  /* ---------------------------- 失效态 ---------------------------- */
+
+  .expired-overlay { display: none; padding: 72px 26px 78px; text-align: center; }
+  .expired-overlay.show { display: block; animation: fade-in .3s ease; }
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+  .expired-icon {
+    display: grid;
+    place-items: center;
+    width: 62px;
+    height: 62px;
+    margin: 0 auto 20px;
+    border-radius: 20px;
+    color: #d97706;
+    background: linear-gradient(140deg, #fff5e8, #ffe9d3);
+    box-shadow: 0 10px 24px -14px rgba(217, 119, 6, .6), 0 0 0 1px rgba(217, 119, 6, .09) inset;
+  }
+  .expired-overlay h2 { margin: 0 0 9px; font-size: 19px; font-weight: 680; letter-spacing: -.2px; }
+  .expired-overlay p { margin: 0; font-size: 14px; line-height: 1.8; color: var(--muted); }
+
+  @media (max-width: 640px) {
+    body { padding: 28px 14px 56px; }
+    .card { border-radius: 20px; }
+    pre { padding: 20px 18px 22px; font-size: 13.5px; }
+    .card-head { padding: 13px 18px 14px; }
+    .head-main { gap: 10px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <a class="badge" href="/" title="前往速享主页，创建自己的分享">
+      <span class="badge-mark">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle>
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+        </svg>
+      </span>
+      别人分享给你的内容
+      <svg class="badge-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="18" y2="12"></line>
+        <polyline points="12 6 18 12 12 18"></polyline>
+      </svg>
+    </a>
+    <a class="tool-link"
+       href="https://json.litetools.top/"
+       target="_blank"
+       rel="noopener noreferrer"
+       title="在新标签页打开 JSON 格式化工具">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 18 22 12 16 6"></polyline>
+        <polyline points="8 6 2 12 8 18"></polyline>
+      </svg>
+      JSON 格式化
+    </a>
+  </div>
+
+  <div class="progress-track">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <main class="card">
+    <div class="card-head" id="cardHead">
+      <div class="head-main">
+        <span class="label">内容原文</span>
+        <div class="actions">
+          <button class="btn-copy" id="copyContent" title="复制全部内容到剪贴板">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="copyLabel">复制内容</span>
+          </button>
+        </div>
+      </div>
+      <div class="head-time">
+        大小 <b id="size">--</b> · 创建于 <b id="createdAt">--:--:--</b> · 将于 <b id="expiresAt">--:--:--</b> 失效
+      </div>
+    </div>
+    <pre id="content"></pre>
+    <div class="expired-overlay" id="expiredOverlay">
+      <div class="expired-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="9"></circle>
+          <polyline points="12 7 12 12.5 16 14.5"></polyline>
+        </svg>
+      </div>
+      <h2>内容已失效</h2>
+      <p>这条分享的有效期已到，内容已从服务器删除。</p>
+    </div>
+  </main>
+</div>
+
+<script id="payload" type="application/json">{{PAYLOAD}}</script>
+<script>
+  const data = JSON.parse(document.getElementById('payload').textContent);
+  const contentEl = document.getElementById('content');
+  const sizeEl = document.getElementById('size');
+  const progressFill = document.getElementById('progressFill');
+  const TTL_MINUTES = Number('{{TTL_MINUTES}}') || 60;
+
+  contentEl.textContent = data.content;
+
+  /** 按 UTF-8 字节数计算，与服务端 Buffer.byteLength 的口径保持一致 */
+  function formatSize(text) {
+    const bytes = new TextEncoder().encode(text).length;
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
+  sizeEl.textContent = formatSize(data.content);
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function clock(ts) {
+    const d = new Date(ts);
+    return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  }
+
+  // createdAt / expiresAt 均来自服务端落盘时的时间戳：
+  // 进度条基准是「内容创建时刻」，与谁在什么时候打开链接无关。
+  document.getElementById('createdAt').textContent = clock(data.createdAt);
+  document.getElementById('expiresAt').textContent = clock(data.expiresAt);
+  document.querySelector('.progress-track').title =
+    `进度条按内容创建时刻 ${clock(data.createdAt)} 起算，有效期共 ${TTL_MINUTES} 分钟`;
+
+  const totalMs = Math.max(1, data.expiresAt - data.createdAt);
+
+  function markExpired() {
+    clearInterval(timer);
+    document.getElementById('cardHead').style.display = 'none';
+    contentEl.style.display = 'none';
+    document.querySelector('.progress-track').style.display = 'none';
+    document.getElementById('expiredOverlay').classList.add('show');
+  }
+
+  function tick() {
+    const left = data.expiresAt - Date.now();
+
+    if (left <= 0) { markExpired(); return; }
+
+    const ratio = Math.max(0, Math.min(1, left / totalMs));
+    progressFill.style.width = (ratio * 100) + '%';
+    progressFill.classList.toggle('warn', left <= 10 * 60 * 1000 && left > 2 * 60 * 1000);
+    progressFill.classList.toggle('danger', left <= 2 * 60 * 1000);
+  }
+
+  const timer = setInterval(tick, 1000);
+  tick();
+
+  /* ---------------------- 一键复制全部内容 ---------------------- */
+
+  const copyBtn = document.getElementById('copyContent');
+  const copyLabel = document.getElementById('copyLabel');
+  let copyTimer;
+
+  async function writeClipboard(text) {
+    // navigator.clipboard 只在安全上下文（HTTPS 或 localhost）可用；
+    // 通过 http + 局域网 IP / 域名访问时会走下面的 execCommand 降级方案。
+    // 加 800ms 超时兜底：个别环境下该 Promise 可能迟迟不落地，避免按钮毫无反馈。
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        const done = await Promise.race([
+          navigator.clipboard.writeText(text).then(() => true, () => false),
+          new Promise((resolve) => setTimeout(() => resolve(null), 800)),
+        ]);
+        if (done === true) return true;
+      } catch { /* 落到降级方案 */ }
+    }
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    const ok = await writeClipboard(data.content);
+    clearTimeout(copyTimer);
+    copyBtn.classList.toggle('done', ok);
+    copyLabel.textContent = ok ? '已复制' : '复制失败';
+    copyTimer = setTimeout(() => {
+      copyBtn.classList.remove('done');
+      copyLabel.textContent = '复制内容';
+    }, 1800);
+  });
+</script>
+</body>
+</html>

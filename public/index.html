@@ -166,8 +166,9 @@
     font-size: 13px;
     color: var(--muted);
     font-variant-numeric: tabular-nums;
+    transition: color .18s;
   }
-  .count b { color: var(--ink-soft); font-weight: 650; }
+  .count.over { color: #dc2626; font-weight: 600; }
 
   button {
     font-family: inherit;
@@ -369,7 +370,7 @@
     <section class="composer">
       <textarea id="content" placeholder="在这里粘贴任意内容：一段文字、一份代码、一段配置、一个临时口令……&#10;&#10;换行与缩进都会原样保留，访问者看到的就是你贴进来的样子。"></textarea>
       <div class="composer-bar">
-        <span class="count"><b id="count">0</b> 字</span>
+        <span class="count" id="count">0 字</span>
         <button id="share" class="btn-primary">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path>
@@ -413,6 +414,9 @@
   const openLink = document.getElementById('openLink');
   const toastEl = document.getElementById('toast');
   const TTL_MINUTES = Number('{{TTL_MINUTES}}') || 60;
+  const MAX_BODY_MB = 10;
+  const MAX_BODY_BYTES = MAX_BODY_MB * 1024 * 1024;
+  const MAX_BODY_HINT = `文本过大，服务器资源限制只能上传小于等于 ${MAX_BODY_MB}M 的文本`;
 
   let toastTimer;
   function toast(msg) {
@@ -428,8 +432,23 @@
     return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds());
   }
 
+  /** 按 UTF-8 字节数计算，与服务端口径一致 */
+  function byteLength(text) {
+    return new TextEncoder().encode(text).length;
+  }
+
+  function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+  }
+
   function updateCount() {
-    countEl.textContent = ta.value.length.toLocaleString('zh-CN');
+    const text = ta.value;
+    const bytes = byteLength(text);
+    countEl.textContent = `${text.length.toLocaleString('zh-CN')} 字 · ${formatSize(bytes)}`;
+    // 超出上限时标红预警，点击分享时还会再拦一次
+    countEl.classList.toggle('over', bytes > MAX_BODY_BYTES);
   }
   ta.addEventListener('input', updateCount);
   updateCount();
@@ -448,6 +467,11 @@
     const content = ta.value;
     if (!content.trim()) {
       toast('先粘贴一点内容吧');
+      ta.focus();
+      return;
+    }
+    if (byteLength(content) > MAX_BODY_BYTES) {
+      toast(MAX_BODY_HINT);
       ta.focus();
       return;
     }

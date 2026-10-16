@@ -21,7 +21,12 @@ const { cleanExpired, TTL_MS, TTL_MINUTES, SHARES_DIR } = require('./cleanup');
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const PUBLIC_DIR = path.join(__dirname, 'public');
-const MAX_BODY_BYTES = 2 * 1024 * 1024; // 单条分享上限 2MB
+const MAX_BODY_MB = 10;
+const MAX_BODY_BYTES = MAX_BODY_MB * 1024 * 1024; // 单条内容上限
+// 请求体上限留出余量：JSON 包装与转义会让请求体比内容本身更大，
+// 否则内容正好 10MB 时会因多出的 {"content":"…"} 而被误拒。
+const MAX_REQUEST_BYTES = MAX_BODY_BYTES * 2;
+const MAX_BODY_HINT = `文本过大，服务器资源限制只能上传小于等于 ${MAX_BODY_MB}M 的文本`;
 const TOKEN_RE = /^[A-Za-z0-9_-]{6,64}$/;
 const CLEAN_INTERVAL_MS = 60 * 1000;
 
@@ -127,16 +132,24 @@ function readBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
+    let exceeded = false;
+
     req.on('data', (chunk) => {
+      if (exceeded) return; // 已超限，后续数据直接丢弃
       size += chunk.length;
-      if (size > MAX_BODY_BYTES) {
-        reject(Object.assign(new Error('内容太大，单次分享上限 2MB'), { status: 413 }));
-        req.destroy();
+      if (size > MAX_REQUEST_BYTES) {
+        exceeded = true;
+        // 这里不 destroy：先把 413 响应写出去，否则客户端只会收到连接重置，
+        // 读不到提示文案。连接断开交给 handleShare 在响应完成后处理。
+        reject(Object.assign(new Error(MAX_BODY_HINT), { status: 413 }));
         return;
       }
       chunks.push(chunk);
     });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+
+    req.on('end', () => {
+      if (!exceeded) resolve(Buffer.concat(chunks).toString('utf8'));
+    });
     req.on('error', reject);
   });
 }
@@ -174,7 +187,10 @@ async function handleShare(req, res) {
   try {
     raw = await readBody(req);
   } catch (err) {
-    return sendJson(res, err.status || 400, { error: err.message });
+    const status = err.status || 400;
+    // 超限时请求体还没收完，等 413 响应写完后主动断开连接
+    if (status === 413) res.on('finish', () => req.destroy());
+    return sendJson(res, status, { error: err.message });
   }
 
   let payload;
@@ -189,7 +205,7 @@ async function handleShare(req, res) {
     return sendJson(res, 400, { error: '内容不能为空' });
   }
   if (Buffer.byteLength(content, 'utf8') > MAX_BODY_BYTES) {
-    return sendJson(res, 413, { error: '内容太大，单次分享上限 2MB' });
+    return sendJson(res, 413, { error: MAX_BODY_HINT });
   }
 
   let token = newToken();

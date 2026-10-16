@@ -174,10 +174,10 @@ Content-Type: application/json
 ### 获取原始内容
 
 ```http
-GET /aB3xK9mPq2Lw7YtR
+GET /source/aB3xK9mPq2Lw7YtR
 ```
 
-与展示页 `/s/<token>` 一一对应，区别是返回**纯文本原文**而非 HTML 页面。
+与展示页 `/s/<token>` 对应，区别是返回**纯文本原文**而非 HTML 页面。
 
 | 情况 | 响应 |
 |---|---|
@@ -189,7 +189,7 @@ GET /aB3xK9mPq2Lw7YtR
 内容页右上角的「JSON 格式化」入口就是通过这个接口把原文传给格式化工具的：
 
 ```
-https://json.litetools.top?url=https://share.example.com/aB3xK9mPq2Lw7YtR
+https://json.litetools.top?url=https://share.example.com/source/aB3xK9mPq2Lw7YtR
 ```
 
 ## 目录结构

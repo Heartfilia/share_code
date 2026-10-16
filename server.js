@@ -213,9 +213,9 @@ async function handleShare(req, res) {
 }
 
 /**
- * 原始内容 API：GET /<token>
+ * 原始内容 API：GET /source/<token>
  *
- * 与展示页 /s/<token> 一一对应，但返回纯文本原文而非 HTML 页面，
+ * 与展示页 /s/<token> 对应，但返回纯文本原文而非 HTML 页面，
  * 供外部工具（JSON 格式化等）通过 ?url= 参数直接抓取。
  * 成功返回原文；token 无效或已过期返回 {"code":-1,"msg":"内容已经过期"}。
  * 响应带 Access-Control-Allow-Origin: *，任意站点都能在浏览器端直接读取。
@@ -289,12 +289,10 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 原始内容 API：/<token>
-  // 放在所有固定路径之后，靠 token 格式校验兜底，不会与 /、/api/share、
-  // /s/... 以及图标路径冲突（token 正则不含斜杠，多段路径天然不匹配）。
-  const rawToken = pathname.slice(1);
-  if ((req.method === 'GET' || req.method === 'OPTIONS') && TOKEN_RE.test(rawToken)) {
-    return handleRaw(req, res, rawToken);
+  // 原始内容 API：/source/<token>
+  // 与展示页 /s/<token> 对应，但返回纯文本原文而非 HTML 页面。
+  if ((req.method === 'GET' || req.method === 'OPTIONS') && pathname.startsWith('/source/')) {
+    return handleRaw(req, res, pathname.slice('/source/'.length));
   }
 
   return sendJson(res, 404, { error: '页面不存在' });

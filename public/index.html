@@ -434,7 +434,10 @@
 
   /** 按 UTF-8 字节数计算，与服务端口径一致 */
   function byteLength(text) {
-    return new TextEncoder().encode(text).length;
+    // 用 Blob 取 size：由浏览器内部计算，不在 JS 堆里生成大数组。
+    // 比 TextEncoder.encode() 轻得多——后者对 10MB 文本会先分配一个
+    // 10MB 的 Uint8Array 再逐字符编码，整个主线程会被占住。
+    return new Blob([text]).size;
   }
 
   function formatSize(bytes) {
@@ -450,7 +453,16 @@
     // 超出上限时标红预警，点击分享时还会再拦一次
     countEl.classList.toggle('over', bytes > MAX_BODY_BYTES);
   }
-  ta.addEventListener('input', updateCount);
+
+  // 统计延后执行：粘贴大段文本时先让内容进入输入框并完成渲染，
+  // 隔一小会儿再算体积，避免输入框在统计期间卡着不显示内容。
+  let countTimer = null;
+  function scheduleCount() {
+    clearTimeout(countTimer);
+    countTimer = setTimeout(updateCount, 120);
+  }
+
+  ta.addEventListener('input', scheduleCount);
   updateCount();
 
   async function copyLink() {

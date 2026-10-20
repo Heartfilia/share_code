@@ -391,7 +391,7 @@
             <polyline points="16 6 12 2 8 6"></polyline>
             <line x1="12" y1="2" x2="12" y2="15"></line>
           </svg>
-          <span id="shareLabel">生成分享链接</span>
+          <span id="shareLabel">生成</span>
         </button>
         </div>
       </div>
@@ -542,7 +542,7 @@
       toast(err.message || '分享失败，请重试');
     } finally {
       shareBtn.disabled = false;
-      shareLabel.textContent = '生成分享链接';
+      shareLabel.textContent = '生成';
     }
   });
 

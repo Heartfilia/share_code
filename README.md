@@ -166,11 +166,25 @@ Content-Type: application/json
 ```json
 {
   "token": "aB3xK9mPq2Lw7YtR",
+  "sec": "cSSEAMDn5OHu6VL9aD3JWWYhBzT3vaRY",
   "url": "https://share.example.com/s/aB3xK9mPq2Lw7YtR",
   "expiresAt": 1792118378394,
   "ttlMinutes": 60
 }
 ```
+
+> `sec` 是提前移除用的凭证，只在创建时下发一次，服务器另存 `shares/<token>.sec`，请勿泄露。
+
+### 提前移除分享
+
+```http
+POST /api/remove
+Content-Type: application/json
+
+{ "token": "aB3xK9mPq2Lw7YtR", "sec": "cSSEAMDn5OHu6VL9aD3JWWYhBzT3vaRY" }
+```
+
+token 与 sec 匹配才删除，否则返回 403；链接不存在返回 404。删除范围仅限 `shares/` 内的 `<token>.txt` 与 `<token>.sec`。
 
 ### 获取原始内容
 

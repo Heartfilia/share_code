@@ -217,6 +217,42 @@
   .btn-primary svg { position: relative; z-index: 1; }
   .btn-primary span { position: relative; z-index: 1; }
 
+  /* 图标按钮：清空 / 生成，统一方形尺寸，手机端不再高度错位 */
+  .icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    border-radius: 15px;
+    line-height: 0;
+  }
+
+  .btn-clear {
+    color: var(--ink-soft);
+    background: #fff;
+    border: 1px solid var(--line);
+    transition: color .18s, border-color .18s, background .18s, transform .15s;
+  }
+  .btn-clear:hover:not(:disabled) { color: #dc2626; border-color: #f3c9c9; background: #fff7f7; }
+  .btn-clear:active:not(:disabled) { transform: scale(.97); }
+  .btn-clear:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* 生成中：链接图标淡出，换成转圈 */
+  .btn-primary.busy { opacity: 1; cursor: progress; }
+  .btn-primary.busy .icon-link { display: none; }
+  .spinner {
+    display: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, .45);
+    border-top-color: #fff;
+    animation: spin .7s linear infinite;
+  }
+  .btn-primary.busy .spinner { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   .btn-ghost {
     padding: 13px 20px;
     font-size: 14.5px;
@@ -316,6 +352,20 @@
   }
   .result-note a:hover { border-color: var(--brand); }
 
+  .btn-revoke {
+    margin-left: 14px;
+    padding: 0 0 1px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 620;
+    color: var(--muted);
+    background: none;
+    border-bottom: 1px solid rgba(132, 148, 171, .4);
+    transition: color .18s, border-color .18s, opacity .18s;
+  }
+  .btn-revoke:hover:not(:disabled) { color: #dc2626; border-color: rgba(220, 38, 38, .5); }
+  .btn-revoke:disabled { opacity: .5; cursor: not-allowed; }
+
   /* ------------------------------ Toast ------------------------------ */
 
   .toast {
@@ -347,7 +397,7 @@
     .composer { border-radius: 22px; padding: 8px; }
     textarea { min-height: 240px; padding: 14px 14px 6px; }
     .composer-bar { padding: 12px 6px 6px 14px; }
-    .btn-primary { padding: 12px 20px; font-size: 14.5px; }
+    .icon-btn { width: 44px; height: 44px; }
     .result { padding: 18px; }
     .link-row { flex-direction: column; }
     .btn-ghost { width: 100%; }
@@ -384,15 +434,22 @@
       <div class="composer-bar">
         <span class="count" id="count">0 字</span>
         <div class="composer-actions">
-          <button id="clear" class="btn-ghost" disabled>清空</button>
-          <button id="share" class="btn-primary">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path>
-            <polyline points="16 6 12 2 8 6"></polyline>
-            <line x1="12" y1="2" x2="12" y2="15"></line>
-          </svg>
-          <span id="shareLabel">生成</span>
-        </button>
+          <button id="clear" class="icon-btn btn-clear" disabled aria-label="清空内容" title="清空内容">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"></path>
+              <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </button>
+          <button id="share" class="btn-primary icon-btn" aria-label="生成分享链接" title="生成分享链接">
+            <svg class="icon-link" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span class="spinner"></span>
+          </button>
         </div>
       </div>
     </section>
@@ -411,6 +468,7 @@
       <p class="result-note">
         链接将于 <b id="expireText">--:--:--</b> 失效 —— 计时从内容创建的那一刻开始算，共 <span id="ttlText">{{TTL_MINUTES}}</span> 分钟，到点内容自动从服务器删除。<br>
         <a id="openLink" href="#" target="_blank" rel="noopener">在新标签页打开看看 →</a>
+        <button id="revoke" class="btn-revoke" type="button" title="用创建时下发的凭证，立刻删除服务器上的这份内容">提前移除分享</button>
       </p>
     </section>
   </main>
@@ -423,16 +481,19 @@
   const countEl = document.getElementById('count');
   const clearBtn = document.getElementById('clear');
   const shareBtn = document.getElementById('share');
-  const shareLabel = document.getElementById('shareLabel');
   const result = document.getElementById('result');
   const linkEl = document.getElementById('link');
   const copyBtn = document.getElementById('copy');
   const openLink = document.getElementById('openLink');
+  const revokeBtn = document.getElementById('revoke');
   const toastEl = document.getElementById('toast');
   const TTL_MINUTES = Number('{{TTL_MINUTES}}') || 60;
   const MAX_BODY_MB = 10;
   const MAX_BODY_BYTES = MAX_BODY_MB * 1024 * 1024;
   const MAX_BODY_HINT = `文本过大，服务器资源限制只能上传小于等于 ${MAX_BODY_MB}M 的文本`;
+
+  // 本次创建对应的 { token, sec }：sec 只下发给创建者，用于提前移除
+  let shareSecret = null;
 
   let toastTimer;
   function toast(msg) {
@@ -514,7 +575,7 @@
     }
 
     shareBtn.disabled = true;
-    shareLabel.textContent = '生成中…';
+    shareBtn.classList.add('busy');
 
     try {
       const res = await fetch('/api/share', {
@@ -525,6 +586,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || '分享失败');
 
+      shareSecret = data.sec ? { token: data.token, sec: data.sec } : null;
       linkEl.value = data.url;
       openLink.href = data.url;
       document.getElementById('expireText').textContent = clockTime(data.expiresAt);
@@ -542,7 +604,33 @@
       toast(err.message || '分享失败，请重试');
     } finally {
       shareBtn.disabled = false;
-      shareLabel.textContent = '生成';
+      shareBtn.classList.remove('busy');
+    }
+  });
+
+  revokeBtn.addEventListener('click', async () => {
+    if (!shareSecret) return;
+    if (!confirm('移除后这条链接立即失效，且无法恢复。确定提前移除？')) return;
+
+    revokeBtn.disabled = true;
+    try {
+      const res = await fetch('/api/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(shareSecret),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || '移除失败');
+
+      // 服务器已删，前端把结果区收起，避免留下一个已经打不开的链接
+      result.hidden = true;
+      linkEl.value = '';
+      shareSecret = null;
+      toast('已提前移除，链接已失效');
+    } catch (err) {
+      toast(err.message || '移除失败，请重试');
+    } finally {
+      revokeBtn.disabled = false;
     }
   });
 

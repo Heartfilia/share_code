@@ -55,6 +55,31 @@ function sharePath(token) {
   return file;
 }
 
+/**
+ * 移除凭证：分享创建时随机生成，只回给创建者，服务器另存一份。
+ * 24 字节 base64url（32 字符，192 bit 熵），猜不出来。
+ */
+function newSec() {
+  return crypto.randomBytes(24).toString('base64url');
+}
+
+/** token → 凭证文件路径，与内容文件同目录，同样过 token 校验防路径穿越 */
+function metaPath(token) {
+  if (typeof token !== 'string' || !TOKEN_RE.test(token)) return null;
+  const file = path.join(SHARES_DIR, `${token}.sec`);
+  if (path.dirname(path.resolve(file)) !== path.resolve(SHARES_DIR)) return null;
+  return file;
+}
+
+/** 定长比较，避免通过响应时间猜凭证 */
+function secMatches(given, stored) {
+  if (typeof given !== 'string' || !given || !stored) return false;
+  const a = Buffer.from(given, 'utf8');
+  const b = Buffer.from(stored, 'utf8');
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 /** 读取一份有效分享，不存在或已过期返回 null（顺手删掉过期文件） */
 function readShare(token) {
   const file = sharePath(token);
@@ -216,16 +241,74 @@ async function handleShare(req, res) {
   }
 
   fs.writeFileSync(file, content, 'utf8');
+
+  // 提前移除用的凭证：只返回给创建者，服务器另存一份用于日后核对
+  const sec = newSec();
+  fs.writeFileSync(metaPath(token), sec, 'utf8');
+
   const expiresAt = Date.now() + TTL_MS;
 
   console.log(`[${new Date().toLocaleString('zh-CN', { hour12: false })}] 新建分享 ${token} (${Buffer.byteLength(content, 'utf8')} 字节)`);
 
   return sendJson(res, 200, {
     token,
+    sec,
     url: `${baseUrl(req)}/s/${token}`,
     expiresAt,
     ttlMinutes: TTL_MINUTES,
   });
+}
+
+/**
+ * 提前移除分享：POST /api/remove { token, sec }
+ *
+ * 必须同时给出 token 与创建时下发的 sec，二者对得上才删。
+ * 删除范围严格限定为 SHARES_DIR 内的 <token>.txt 与 <token>.sec 两个文件：
+ * token 已过 TOKEN_RE（只含字母数字下划线短横线），再加上目录校验，
+ * 任何形如 ../ 的路径都无法构造出来，也就碰不到目录外的文件。
+ */
+async function handleRemove(req, res) {
+  let raw;
+  try {
+    raw = await readBody(req);
+  } catch (err) {
+    const status = err.status || 400;
+    if (status === 413) res.on('finish', () => req.destroy());
+    return sendJson(res, status, { error: err.message });
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(raw || '{}');
+  } catch {
+    return sendJson(res, 400, { error: '请求格式错误' });
+  }
+
+  const token = typeof payload.token === 'string' ? payload.token : '';
+  const sec = typeof payload.sec === 'string' ? payload.sec : '';
+
+  const file = sharePath(token);
+  const meta = metaPath(token);
+  if (!file || !meta) return sendJson(res, 400, { error: '参数不合法' });
+
+  let stored = '';
+  try {
+    stored = fs.readFileSync(meta, 'utf8').trim();
+  } catch {
+    return sendJson(res, 404, { error: '链接不存在或已失效' });
+  }
+
+  if (!secMatches(sec, stored)) {
+    return sendJson(res, 403, { error: '无权移除这条分享' });
+  }
+
+  // 只删自己算出来的这两个路径，绝不接受请求里的路径
+  try { fs.unlinkSync(file); } catch { /* 内容可能已被清理 */ }
+  try { fs.unlinkSync(meta); } catch { /* 同上 */ }
+
+  console.log(`[${new Date().toLocaleString('zh-CN', { hour12: false })}] 提前移除 ${token}`);
+
+  return sendJson(res, 200, { ok: true });
 }
 
 /**
@@ -277,6 +360,10 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'POST' && pathname === '/api/share') {
     return handleShare(req, res);
+  }
+
+  if (req.method === 'POST' && pathname === '/api/remove') {
+    return handleRemove(req, res);
   }
 
   if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {

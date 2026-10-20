@@ -92,6 +92,11 @@
     background: linear-gradient(140deg, var(--brand), var(--brand-2));
     box-shadow: 0 4px 10px -4px rgba(99, 102, 241, .8);
   }
+  a.brand { text-decoration: none; transition: transform .18s, box-shadow .18s; }
+  a.brand:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 12px 26px -12px rgba(15, 23, 42, .4);
+  }
 
   h1 {
     margin: 22px 0 12px;
@@ -222,12 +227,19 @@
     border-radius: 13px;
     transition: border-color .18s, background .18s, color .18s, transform .18s;
   }
-  .btn-ghost:hover { border-color: #c8d1e8; background: #f8faff; }
-  .btn-ghost:active { transform: scale(.985); }
+  .btn-ghost:hover:not(:disabled) { border-color: #c8d1e8; background: #f8faff; }
+  .btn-ghost:active:not(:disabled) { transform: scale(.985); }
+  .btn-ghost:disabled { opacity: .45; cursor: not-allowed; }
   .btn-ghost.done {
     color: var(--ok);
     border-color: #a7e8cf;
     background: #f0fdf8;
+  }
+
+  .composer-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
   /* ----------------------------- 结果区 ----------------------------- */
@@ -353,7 +365,7 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="brand">
+    <a class="brand" href="https://github.com/Heartfilia/share_code" target="_blank" rel="noopener" aria-label="GitHub 仓库" title="GitHub 仓库">
       <span class="brand-mark">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle>
@@ -361,7 +373,7 @@
         </svg>
       </span>
       速享
-    </div>
+    </a>
     <h1>粘贴内容，生成一条会消失的链接</h1>
     <p class="lede">丢进下面的框，点一下就完成分享。链接 <strong>{{TTL_MINUTES}} 分钟</strong>后自动失效，内容同时销毁。</p>
   </header>
@@ -371,7 +383,9 @@
       <textarea id="content" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" placeholder="在这里粘贴任意内容：一段文字、一份代码、一段配置、一个临时口令……&#10;&#10;换行与缩进都会原样保留，访问者看到的就是你贴进来的样子。"></textarea>
       <div class="composer-bar">
         <span class="count" id="count">0 字</span>
-        <button id="share" class="btn-primary">
+        <div class="composer-actions">
+          <button id="clear" class="btn-ghost" disabled>清空</button>
+          <button id="share" class="btn-primary">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"></path>
             <polyline points="16 6 12 2 8 6"></polyline>
@@ -379,6 +393,7 @@
           </svg>
           <span id="shareLabel">生成分享链接</span>
         </button>
+        </div>
       </div>
     </section>
 
@@ -406,6 +421,7 @@
 <script>
   const ta = document.getElementById('content');
   const countEl = document.getElementById('count');
+  const clearBtn = document.getElementById('clear');
   const shareBtn = document.getElementById('share');
   const shareLabel = document.getElementById('shareLabel');
   const result = document.getElementById('result');
@@ -452,6 +468,8 @@
     countEl.textContent = `${text.length.toLocaleString('zh-CN')} 字 · ${formatSize(bytes)}`;
     // 超出上限时标红预警，点击分享时还会再拦一次
     countEl.classList.toggle('over', bytes > MAX_BODY_BYTES);
+    // 没内容时清空按钮置灰，无可清之空
+    clearBtn.disabled = !text.trim();
   }
 
   // 统计延后执行：粘贴大段文本时先让内容进入输入框并完成渲染，
@@ -461,6 +479,13 @@
     clearTimeout(countTimer);
     countTimer = setTimeout(updateCount, 120);
   }
+
+  clearBtn.addEventListener('click', () => {
+    ta.value = '';
+    updateCount();
+    ta.focus();
+    toast('已清空');
+  });
 
   ta.addEventListener('input', scheduleCount);
   updateCount();

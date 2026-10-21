@@ -66,22 +66,43 @@
 
   header { text-align: center; margin-bottom: 34px; }
 
+  /* 徽章：正面「速享」，鼠标移上去沿 Y 轴翻到 GitHub 那一面，移开自动转回。
+     旋转加在内层 .brand-flip 上，<a> 本身始终是平面，悬停命中区域不会在翻转
+     到 90° 时消失，避免来回抖动的经典问题。 */
   .brand {
+    display: inline-block;
+    text-decoration: none;
+    perspective: 700px;
+  }
+  .brand-flip {
+    display: inline-grid;
+    transform-style: preserve-3d;
+    transition: transform .55s cubic-bezier(.34, .1, .2, 1);
+  }
+  .brand:hover .brand-flip,
+  .brand:focus-visible .brand-flip { transform: rotateY(180deg); }
+
+  /* 两面重叠在同一个网格单元里，容器尺寸取两者较大值，翻转时不跳动 */
+  .brand-face {
+    grid-area: 1 / 1;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 9px;
+    padding: 6px 15px 6px 6px;
     font-size: 14.5px;
     font-weight: 650;
     letter-spacing: .2px;
     color: var(--ink);
-    padding: 6px 15px 6px 6px;
-    background: rgba(255, 255, 255, .78);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, .92);
     border: 1px solid rgba(255, 255, 255, .9);
     border-radius: 999px;
     box-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 8px 22px -14px rgba(15, 23, 42, .3);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
   }
+  .brand-back { transform: rotateY(180deg); }
+
   .brand-mark {
     display: grid;
     place-items: center;
@@ -92,10 +113,9 @@
     background: linear-gradient(140deg, var(--brand), var(--brand-2));
     box-shadow: 0 4px 10px -4px rgba(99, 102, 241, .8);
   }
-  a.brand { text-decoration: none; transition: transform .18s, box-shadow .18s; }
-  a.brand:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 1px 2px rgba(15, 23, 42, .05), 0 12px 26px -12px rgba(15, 23, 42, .4);
+  .brand-mark-gh {
+    background: #181717;
+    box-shadow: 0 4px 10px -4px rgba(15, 23, 42, .65);
   }
 
   h1 {
@@ -415,14 +435,26 @@
 <body>
 <div class="wrap">
   <header>
-    <a class="brand" href="https://github.com/Heartfilia/share_code" target="_blank" rel="noopener" aria-label="GitHub 仓库" title="GitHub 仓库">
-      <span class="brand-mark">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle>
-          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-        </svg>
+    <a class="brand" href="https://github.com/Heartfilia/share_code" target="_blank" rel="noopener" aria-label="GitHub 仓库" title="点个star吧">
+      <span class="brand-flip">
+      <span class="brand-face brand-front">
+        <span class="brand-mark">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+          </svg>
+        </span>
+        速享
       </span>
-      速享
+      <span class="brand-face brand-back" aria-hidden="true">
+        <span class="brand-mark brand-mark-gh">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+          </svg>
+        </span>
+        GitHub
+      </span>
+      </span>
     </a>
     <h1>粘贴内容，生成一条会消失的链接</h1>
     <p class="lede">丢进下面的框，点一下就完成分享。链接 <strong>{{TTL_MINUTES}} 分钟</strong>后自动失效，内容同时销毁。</p>

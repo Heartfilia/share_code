@@ -409,7 +409,40 @@
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
 
+  /* --------------------------- 今日计数 --------------------------- */
+
+  /* 只读信息条：贴底悬浮、不可点，样式压得比正文更淡 */
+  .today-stat {
+    position: fixed;
+    left: 50%;
+    bottom: 16px;
+    z-index: 5;
+    transform: translateX(-50%);
+    padding: 7px 16px;
+    font-size: 12.5px;
+    font-weight: 550;
+    letter-spacing: .2px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, .72);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, .9);
+    border-radius: 999px;
+    box-shadow: 0 6px 18px -12px rgba(15, 23, 42, .35);
+    pointer-events: none;
+    user-select: none;
+  }
+  .today-stat b {
+    color: var(--ink-soft);
+    font-weight: 650;
+    font-variant-numeric: tabular-nums;
+  }
+
   /* ---------------------------- 响应式 ---------------------------- */
+
+  @media (max-width: 640px), (hover: none) {
+    .today-stat { display: none; }
+  }
 
   @media (max-width: 640px) {
     body { padding: 30px 14px 52px; }
@@ -505,6 +538,8 @@
     </section>
   </main>
 </div>
+
+<div class="today-stat" id="todayStat" hidden>今日已创建分享 <b id="todayCount">0</b> 条</div>
 
 <div class="toast" id="toast"></div>
 
@@ -678,6 +713,44 @@
   });
 
   linkEl.addEventListener('click', () => linkEl.select());
+
+  // 今日创建数：只在进入/刷新页面时取一次，不做轮询
+  const statEl = document.getElementById('todayStat');
+  const composerEl = document.querySelector('.composer');
+  const STAT_GAP = 8; // 与底部的留白，和 CSS 里的 bottom 对齐
+  let statReady = false; // 拿到数据前不参与显示判断
+  let statHeight = 32;   // 隐藏时量不到高度，用上次的值兜底
+
+  /** 输入区与底部计数条是否已经贴上/重叠 */
+  function statOverlaps() {
+    const box = composerEl.getBoundingClientRect();
+    const bandTop = window.innerHeight - (16 + statHeight + STAT_GAP);
+    return box.bottom > bandTop;
+  }
+
+  function syncStat() {
+    if (!statReady) return;
+    const show = !statOverlaps();
+    statEl.hidden = !show;
+    if (show) statHeight = statEl.offsetHeight || statHeight;
+  }
+
+  window.addEventListener('scroll', syncStat, { passive: true });
+  window.addEventListener('resize', syncStat);
+
+  (async function loadTodayStat() {
+    try {
+      const res = await fetch('/api/stats');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (typeof data.count !== 'number') return;
+      document.getElementById('todayCount').textContent = data.count.toLocaleString('zh-CN');
+      statEl.hidden = false;
+      statHeight = statEl.offsetHeight || statHeight;
+      statReady = true;
+      syncStat();
+    } catch { /* 取不到就不显示 */ }
+  })();
 
   // Cmd / Ctrl + Enter 快捷分享
   ta.addEventListener('keydown', (e) => {

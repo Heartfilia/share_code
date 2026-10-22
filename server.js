@@ -80,6 +80,55 @@ function secMatches(given, stored) {
   return crypto.timingSafeEqual(a, b);
 }
 
+/* ------------------------------ 今日计数 ------------------------------ */
+
+// 计数落盘在 shares/ 下，文件过期清理会跳过点开头的文件，不会被误删
+const STATS_FILE = path.join(SHARES_DIR, '.stats.json');
+
+/** 本地时区的 YYYY-MM-DD，跨天自然归零 */
+function todayKey() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function readStats() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(STATS_FILE, 'utf8'));
+    return {
+      date: typeof raw.date === 'string' ? raw.date : '',
+      count: Number.isFinite(raw.count) ? raw.count : 0,
+    };
+  } catch {
+    return { date: '', count: 0 };
+  }
+}
+
+/**
+ * 成功创建一条分享后调用；写失败只影响统计，不影响分享本身。
+ *
+ * 并发安全的前提是「单进程」：Node 单线程，本函数从读取到写回全是同步代码，
+ * 中间没有 await，所以多个请求不可能交错执行，不会丢计数。
+ * 先写临时文件再 rename 原子替换，避免进程在写入途中被杀留下半截文件，
+ * 导致读不回来、计数被重置。
+ */
+function bumpTodayCount() {
+  const today = todayKey();
+  const stats = readStats();
+  const count = stats.date === today ? stats.count + 1 : 1;
+  const tmp = `${STATS_FILE}.tmp`;
+  try {
+    fs.writeFileSync(tmp, JSON.stringify({ date: today, count }), 'utf8');
+    fs.renameSync(tmp, STATS_FILE); // 同分区 rename 是原子操作
+  } catch { /* 忽略 */ }
+  return count;
+}
+
+function todayCount() {
+  const stats = readStats();
+  return stats.date === todayKey() ? stats.count : 0;
+}
+
 /** 读取一份有效分享，不存在或已过期返回 null（顺手删掉过期文件） */
 function readShare(token) {
   const file = sharePath(token);
@@ -246,6 +295,9 @@ async function handleShare(req, res) {
   const sec = newSec();
   fs.writeFileSync(metaPath(token), sec, 'utf8');
 
+  // 落盘成功后才计数，失败（抛异常）不会走到这里
+  bumpTodayCount();
+
   const expiresAt = Date.now() + TTL_MS;
 
   console.log(`[${new Date().toLocaleString('zh-CN', { hour12: false })}] 新建分享 ${token} (${Buffer.byteLength(content, 'utf8')} 字节)`);
@@ -364,6 +416,10 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === 'POST' && pathname === '/api/remove') {
     return handleRemove(req, res);
+  }
+
+  if (req.method === 'GET' && pathname === '/api/stats') {
+    return sendJson(res, 200, { date: todayKey(), count: todayCount() });
   }
 
   if (req.method === 'GET' && (pathname === '/' || pathname === '/index.html')) {

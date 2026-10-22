@@ -82,6 +82,33 @@
     transition: opacity .18s, transform .18s;
   }
   .badge:hover .badge-arrow { opacity: 1; transform: translateX(2px); }
+
+  /* 文字切换：悬停时原文上滑淡出、新文案从下方滑入，容器高度固定不跳动 */
+  .badge-text {
+    display: inline-grid;
+    overflow: hidden;
+    line-height: 1.35;
+  }
+  .badge-text > span {
+    grid-area: 1 / 1;
+    white-space: nowrap;
+    transition: opacity .2s ease, transform .28s cubic-bezier(.2, .8, .3, 1);
+  }
+  .badge-text-b {
+    justify-self: center;
+    opacity: 0;
+    transform: translateY(130%);
+  }
+  .badge:hover .badge-text-a,
+  .badge:focus-visible .badge-text-a {
+    opacity: 0;
+    transform: translateY(-130%);
+  }
+  .badge:hover .badge-text-b,
+  .badge:focus-visible .badge-text-b {
+    opacity: 1;
+    transform: translateY(0);
+  }
   .badge-mark {
     display: grid;
     place-items: center;
@@ -288,7 +315,10 @@
           <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
         </svg>
       </span>
-      别人分享给你的内容
+      <span class="badge-text">
+        <span class="badge-text-a">别人分享给你的内容</span>
+        <span class="badge-text-b" aria-hidden="true">创建自己的分享</span>
+      </span>
       <svg class="badge-arrow" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
         <line x1="5" y1="12" x2="18" y2="12"></line>
         <polyline points="12 6 18 12 12 18"></polyline>
